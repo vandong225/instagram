@@ -1,0 +1,58 @@
+[
+  {
+    "name": "ig_did",
+    "value": "FF2B691D-F4C9-4691-A447-37A3A020BE3D",
+    "domain": ".instagram.com",
+    "path": "/",
+    "expires": 1717233851.773513,
+    "size": 42,
+    "httpOnly": true,
+    "secure": true,
+    "session": false,
+    "sameParty": false,
+    "sourceScheme": "Secure",
+    "sourcePort": 443
+  },
+  {
+    "name": "mid",
+    "value": "YpiBuwAEAAGZznV4jmDBdkp_PkeH",
+    "domain": ".instagram.com",
+    "path": "/",
+    "expires": 1717233851.773481,
+    "size": 31,
+    "httpOnly": false,
+    "secure": true,
+    "session": false,
+    "sameParty": false,
+    "sourceScheme": "Secure",
+    "sourcePort": 443
+  },
+  {
+    "name": "ig_nrcb",
+    "value": "1",
+    "domain": ".instagram.com",
+    "path": "/",
+    "expires": 1685697851.773529,
+    "size": 8,
+    "httpOnly": false,
+    "secure": true,
+    "session": false,
+    "sameParty": false,
+    "sourceScheme": "Secure",
+    "sourcePort": 443
+  },
+  {
+    "name": "csrftoken",
+    "value": "Qs54Y7Ptrf1TboEDWCuB0bTiFFq5xYNj",
+    "domain": ".instagram.com",
+    "path": "/",
+    "expires": 1685613744.112546,
+    "size": 41,
+    "httpOnly": false,
+    "secure": true,
+    "session": false,
+    "sameParty": false,
+    "sourceScheme": "Secure",
+    "sourcePort": 443
+  }
+]
