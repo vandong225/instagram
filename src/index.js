@@ -8,6 +8,11 @@ app.get("/", async (req, res) => {
   res.send("Hello World");
 });
 
+app.get("/screenshot", async (req, res) => {
+  await instagramBot.screenshot();
+  res.send("Hello World");
+});
+
 app.listen(3000, () => {
   console.log("running on port 3000");
 });

@@ -3,6 +3,7 @@ services:
     instagram-bot:
       container_name: instagram-bot
       build: .
+      env_file: .env
       volumes:
         - .:/app
       ports:
