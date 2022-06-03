@@ -1,5 +1,6 @@
 const puppeteer = require("puppeteer");
 const fs = require("fs");
+const utils = require("./utils")
 
 const { USER_NAME, PASSWORD } = process.env;
 class InstagramBot {
@@ -69,12 +70,12 @@ class InstagramBot {
     const isLogin = inputUserName;
 
     if (isLogin) {
-      this._performLoginForm();
+     await this._performLoginForm();
     }
 
     await this.page.goto(URL_PROFILE);
     await this.page.waitFor(5000);
-    if (isLogin) this._writeCookie();
+    if (isLogin) await this._writeCookie();
 
     await this.page.screenshot({ path: "./images/example.png" });
   };
@@ -119,7 +120,7 @@ class InstagramBot {
 
       if (isBottom) break;
 
-      await sleep(3000);
+      await utils.sleep(3000);
     }
   };
 
