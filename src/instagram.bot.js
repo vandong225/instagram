@@ -1,7 +1,8 @@
 const puppeteer = require("puppeteer");
 const fs = require("fs");
 const axios = require("axios").default;
-// const utils = require("./utils");
+const utils = require("./utils");
+const { UserModel } = require("./mongoose");
 
 const { USER_NAME, PASSWORD, USER_ID } = process.env;
 
@@ -28,22 +29,22 @@ class InstagramBot {
 
   setUpInterceptor = async () => {
     await this.page.setRequestInterception(true);
-    this.page.on('request', (request) => {
-        if (['image'].indexOf(request.resourceType()) !== -1) {
-            request.abort();
-        } else {
-            request.continue();
-        }
+    this.page.on("request", (request) => {
+      if (["image"].indexOf(request.resourceType()) !== -1) {
+        request.abort();
+      } else {
+        request.continue();
+      }
     });
 
-    await this.page.on('console', msg => {
-        for (let i = 0; i < msg._args.length; ++i) {
-            msg._args[i].jsonValue().then(result => {
-                console.log(result);
-            })
-        }
+    await this.page.on("console", (msg) => {
+      for (let i = 0; i < msg._args.length; ++i) {
+        msg._args[i].jsonValue().then((result) => {
+          console.log(result);
+        });
+      }
     });
-  }
+  };
 
   _writeCookie = async () => {
     const cookies = await this.page.cookies();
@@ -127,41 +128,80 @@ class InstagramBot {
           Cookie: this._getCookie(),
         },
       }
-   );
+    );
 
-   const {edge_follow,edge_followed_by} = res.data.data.user
+    const { edge_follow, edge_followed_by } = res.data.data.user;
 
-   return {
-     followers: edge_followed_by.count,
-     following: edge_follow.count
-   }
-  }
+    return {
+      followers: edge_followed_by.count,
+      following: edge_follow.count,
+    };
+  };
 
-  getFollowers = async () => {
-    // const links = await this.page.setRequestInterception
+  getUsers = async (count, type) => {
+    let next_max_id = null;
+    let users = [];
+    while (users.length < count) {
+      const max_id = next_max_id ? `&max_id=${next_max_id}` : "";
+      const res = await axios.get(
+        `https://i.instagram.com/api/v1/friendships/${USER_ID}/${type}/?count=100&search_surface=follow_list_page${max_id}`,
+        {
+          headers: {
+            "x-ig-app-id": 936619743392459,
+            Cookie: this._getCookie(),
+          },
+        }
+      );
+
+      users = [...users, ...res.data.users];
+      console.log(users.length, res.data.users.length, next_max_id);
+      next_max_id = res.data.next_max_id;
+
+      await utils.sleep(3000);
+    }
+
+    const userRes = users.map((user) => ({
+      username: user.username,
+      type,
+      is_private: user.is_private,
+      userId: user.pk,
+    }));
+
+    for (let user of userRes) {
+      await UserModel.findOneAndUpdate({ username: user.username }, user, {
+        upsert: true,
+      });
+    }
+
+    return userRes;
+  };
+
+  performFollow = async (userId) => {
     const res = await axios.get(
-      `https://i.instagram.com/api/v1/friendships/${USER_ID}/followers/?count=12&search_surface=follow_list_page`,
+      `https://www.instagram.com/web/friendships/${userId}/follow/`,
       {
         headers: {
           "x-ig-app-id": 936619743392459,
           Cookie: this._getCookie(),
+          'x-instagram-ajax': 1005633233
         },
       }
     );
- 
-    return res.data.users.filter((user) => !user.is_private).map((user) => user.username);
   };
 
   buildBot = async () => {
     try {
       // await this.initialize();
       // await this.login();
-      await this.getMyProfile();
+
+      const { followers, following } = await this.getMyProfile();
+      await this.getUsers(followers, "followers");
+      await this.getUsers(following, "following");
     } catch (e) {
       console.log(e);
     } finally {
       // await this.closeBrowser();
-      console.log('finally')
+      console.log("finally");
     }
   };
 

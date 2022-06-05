@@ -8,3 +8,20 @@ services:
         - .:/app
       ports:
        - 3000:3000
+      networks:
+       - common
+    mongo:
+      container_name: mongo
+      image: mongo
+      env_file:
+        - .env
+      volumes:
+        - ./data/mongo1:/data/db
+      networks:
+        - common
+      ports:
+        - 27017:27017
+networks:
+  common:
+    driver: bridge
+     
