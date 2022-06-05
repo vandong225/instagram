@@ -86,7 +86,7 @@ class InstagramBot {
 
   login = async () => {
     const URL = "https://www.instagram.com/?hl=en";
-    const URL_PROFILE = "https://www.instagram.com/khoi_troi/followers/?hl=en";
+    const URL_PROFILE = `https://www.instagram.com/${USER_NAME}/followers/?hl=en`;
     await this.page.goto(URL);
     const isHaveCookie = await this._setCookie();
     if (isHaveCookie) {
@@ -118,86 +118,45 @@ class InstagramBot {
     await this.browser.close();
   };
 
-  // scrollDialog = async () => {
-  //   const isDialogAppear = await this.page
-  //     .waitForSelector("div[role=dialog]", {
-  //       timeout: 5000,
-  //     })
-  //     .catch(console.log);
+  getMyProfile = async (username = USER_NAME) => {
+    const res = await axios.get(
+      `https://i.instagram.com/api/v1/users/web_profile_info/?username=${username}`,
+      {
+        headers: {
+          "x-ig-app-id": 936619743392459,
+          Cookie: this._getCookie(),
+        },
+      }
+   );
 
-  //   if (isDialogAppear) {
-  //     await this._autoScroll();
-  //     const links = await this._getLinksProfile();
-  //     console.log(links);
-  //   }
-  // };
+   const {edge_follow,edge_followed_by} = res.data.data.user
 
-  // _autoScroll = async () => {
-  //   while (true) {
-  //     const isBottom = await this.page.evaluate((selector) => {
-  //       const element = document.querySelector(selector);
-  //       const elementFollower = document.querySelector("._ac2a");
-  //       const elementLinks = document.querySelectorAll(
-  //         "div[role=dialog] a[role=link]"
-  //       );
-  //       const totalFollower = elementFollower.textContent;
-  //       if (totalFollower == 0) return true;
-  //       if (element) {
-  //         element.scrollTop += element.offsetHeight;
-  //         console.error(`Scrolled to selector ${selector}`);
-  //       } else {
-  //         console.error(`cannot find selector ${selector}`);
-  //       }
-
-  //       return totalFollower <= elementLinks.length;
-  //     }, this._selectorDialog);
-
-  //     if (isBottom) break;
-
-  //     await utils.sleep(3000);
-  //   }
-  // };
-
-  // _getLinksProfile = async () => {
-  //   const links = await this.page.evaluate(() => {
-  //     const elementLinks = document.querySelectorAll(
-  //       "div[role=dialog] a[role=link]"
-  //     );
-  //     const res = [];
-  //     for (const el of elementLinks) {
-  //       res.push(el.href);
-  //     }
-  //     return res;
-  //   }, this._selectorDialog);
-
-  //   return links;
-  // };
+   return {
+     followers: edge_followed_by.count,
+     following: edge_follow.count
+   }
+  }
 
   getFollowers = async () => {
     // const links = await this.page.setRequestInterception
-    console.log(
-      this._getCookie(),
-      `https://i.instagram.com/api/v1/friendships/${USER_ID}/followers/?count=12&search_surface=follow_list_page`
-    );
     const res = await axios.get(
       `https://i.instagram.com/api/v1/friendships/${USER_ID}/followers/?count=12&search_surface=follow_list_page`,
       {
         headers: {
           "x-ig-app-id": 936619743392459,
-          Cookies: this._getCookie(),
+          Cookie: this._getCookie(),
         },
       }
     );
-
-    console.log(res.data.users);
-
+ 
+    return res.data.users.filter((user) => !user.is_private).map((user) => user.username);
   };
 
   buildBot = async () => {
     try {
       // await this.initialize();
       // await this.login();
-      await this.getFollowers();
+      await this.getMyProfile();
     } catch (e) {
       console.log(e);
     } finally {
