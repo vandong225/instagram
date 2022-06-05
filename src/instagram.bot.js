@@ -1,13 +1,16 @@
 const puppeteer = require("puppeteer");
 const fs = require("fs");
-const utils = require("./utils")
+const axios = require("axios").default;
+// const utils = require("./utils");
 
-const { USER_NAME, PASSWORD } = process.env;
+const { USER_NAME, PASSWORD, USER_ID } = process.env;
+
+// axios.defaults.baseURL = "https://i.instagram.com/api/v1"
 class InstagramBot {
-  _selectorDialog = 'div[role="dialog"] ._aano';
+  // _selectorDialog = 'div[role="dialog"] ._aano';
   initialize = async () => {
     this.browser = await puppeteer.launch({
-      headless: false,
+      headless: true,
       args: [
         "--disable-gpu",
         "--disable-dev-shm-usage",
@@ -16,11 +19,42 @@ class InstagramBot {
       ],
     });
     this.page = await this.browser.newPage();
+    await this.page.setUserAgent(
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36"
+    );
+
+    await this.setUpInterceptor();
   };
+
+  setUpInterceptor = async () => {
+    await this.page.setRequestInterception(true);
+    this.page.on('request', (request) => {
+        if (['image'].indexOf(request.resourceType()) !== -1) {
+            request.abort();
+        } else {
+            request.continue();
+        }
+    });
+
+    await this.page.on('console', msg => {
+        for (let i = 0; i < msg._args.length; ++i) {
+            msg._args[i].jsonValue().then(result => {
+                console.log(result);
+            })
+        }
+    });
+  }
 
   _writeCookie = async () => {
     const cookies = await this.page.cookies();
     await fs.writeFileSync("./cookies.json", JSON.stringify(cookies, null, 2));
+  };
+
+  _getCookie = () => {
+    const cookiesString = fs.readFileSync("./cookies.json", "utf8");
+    const cookie = JSON.parse(cookiesString);
+
+    return cookie.map(({ name, value }) => `${name}=${value}`).join(";");
   };
 
   _setCookie = async () => {
@@ -70,7 +104,7 @@ class InstagramBot {
     const isLogin = inputUserName;
 
     if (isLogin) {
-     await this._performLoginForm();
+      await this._performLoginForm();
     }
 
     await this.page.goto(URL_PROFILE);
@@ -84,70 +118,91 @@ class InstagramBot {
     await this.browser.close();
   };
 
-  scrollDialog = async () => {
-    const isDialogAppear = await this.page
-      .waitForSelector("div[role=dialog]", {
-        timeout: 5000,
-      })
-      .catch(console.log);
+  // scrollDialog = async () => {
+  //   const isDialogAppear = await this.page
+  //     .waitForSelector("div[role=dialog]", {
+  //       timeout: 5000,
+  //     })
+  //     .catch(console.log);
 
-    if (isDialogAppear) {
-      await this._autoScroll();
-      const links = await this._getLinksProfile();
-      console.log(links);
-    }
-  };
+  //   if (isDialogAppear) {
+  //     await this._autoScroll();
+  //     const links = await this._getLinksProfile();
+  //     console.log(links);
+  //   }
+  // };
 
-  _autoScroll = async () => {
-    while (true) {
-      const isBottom = await this.page.evaluate((selector) => {
-        const element = document.querySelector(selector);
-        const elementFollower = document.querySelector("._ac2a");
-        const elementLinks = document.querySelectorAll(
-          "div[role=dialog] a[role=link]"
-        );
-        const totalFollower = elementFollower.textContent;
-        if (totalFollower == 0) return true;
-        if (element) {
-          element.scrollTop += element.offsetHeight;
-          console.error(`Scrolled to selector ${selector}`);
-        } else {
-          console.error(`cannot find selector ${selector}`);
-        }
+  // _autoScroll = async () => {
+  //   while (true) {
+  //     const isBottom = await this.page.evaluate((selector) => {
+  //       const element = document.querySelector(selector);
+  //       const elementFollower = document.querySelector("._ac2a");
+  //       const elementLinks = document.querySelectorAll(
+  //         "div[role=dialog] a[role=link]"
+  //       );
+  //       const totalFollower = elementFollower.textContent;
+  //       if (totalFollower == 0) return true;
+  //       if (element) {
+  //         element.scrollTop += element.offsetHeight;
+  //         console.error(`Scrolled to selector ${selector}`);
+  //       } else {
+  //         console.error(`cannot find selector ${selector}`);
+  //       }
 
-        return totalFollower <= elementLinks.length;
-      }, this._selectorDialog);
+  //       return totalFollower <= elementLinks.length;
+  //     }, this._selectorDialog);
 
-      if (isBottom) break;
+  //     if (isBottom) break;
 
-      await utils.sleep(3000);
-    }
-  };
+  //     await utils.sleep(3000);
+  //   }
+  // };
 
-  _getLinksProfile = async () => {
-    const links = await this.page.evaluate(() => {
-      const elementLinks = document.querySelectorAll(
-        "div[role=dialog] a[role=link]"
-      );
-      const res = [];
-      for (const el of elementLinks) {
-        res.push(el.href);
+  // _getLinksProfile = async () => {
+  //   const links = await this.page.evaluate(() => {
+  //     const elementLinks = document.querySelectorAll(
+  //       "div[role=dialog] a[role=link]"
+  //     );
+  //     const res = [];
+  //     for (const el of elementLinks) {
+  //       res.push(el.href);
+  //     }
+  //     return res;
+  //   }, this._selectorDialog);
+
+  //   return links;
+  // };
+
+  getFollowers = async () => {
+    // const links = await this.page.setRequestInterception
+    console.log(
+      this._getCookie(),
+      `https://i.instagram.com/api/v1/friendships/${USER_ID}/followers/?count=12&search_surface=follow_list_page`
+    );
+    const res = await axios.get(
+      `https://i.instagram.com/api/v1/friendships/${USER_ID}/followers/?count=12&search_surface=follow_list_page`,
+      {
+        headers: {
+          "x-ig-app-id": 936619743392459,
+          Cookies: this._getCookie(),
+        },
       }
-      return res;
-    }, this._selectorDialog);
+    );
 
-    return links;
+    console.log(res.data.users);
+
   };
 
   buildBot = async () => {
     try {
-      await this.initialize();
-      await this.login();
-      await this.scrollDialog();
+      // await this.initialize();
+      // await this.login();
+      await this.getFollowers();
     } catch (e) {
       console.log(e);
     } finally {
       // await this.closeBrowser();
+      console.log('finally')
     }
   };
 
