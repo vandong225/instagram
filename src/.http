@@ -1,0 +1,10 @@
+POST https://www.instagram.com/web/comments/1444006631772011141/add/ HTTP/1.1
+content-type: application/x-www-form-urlencoded
+cookie: mid=YphuQwAEAAGqmPUnbgrxAzq8yRFH; ig_did=BF73AA63-E4C8-4FDD-8D53-B9E18ECAC24F; ig_nrcb=1; datr=_GeZYnXFnZ1HfmWEW-iv6aOi; csrftoken=xnJoPwkH1TpBQWQlsGFP2NHZLR9xlFQc; ds_user_id=2367497015; sessionid=2367497015%3A2dwq48vzJvQNs3%3A3; shbid="13073\0542367497015\0541686016016:01f79c5cd3a39af18d4a56cabaa722717c449e6d6b7c7fd8bf0246ffe16469d31320a265"; shbts="1654480016\0542367497015\0541686016016:01f7b31bffd8d406ef6fd6edacb8f423e1da8ee7ac231668c08171612c463cd4b74bf462"; rur="VLL\0542367497015\0541686107051:01f7cebd48b510719b923853d3e0c9465305baa602f13cdfadd9d2c6747098e70a2ba013"
+x-asbd-id: 198387
+x-csrftoken: xnJoPwkH1TpBQWQlsGFP2NHZLR9xlFQc
+x-ig-app-id: 936619743392459
+x-instagram-ajax: 1005638345
+
+comment_text=hii
+&replied_to_comment_id=

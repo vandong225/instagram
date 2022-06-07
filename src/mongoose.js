@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const { DB_URI } = process.env;
 
@@ -7,15 +7,21 @@ async function connectDB() {
 }
 
 const userSchema = new mongoose.Schema({
-    username: String,
-    type: String,
-    is_private: Boolean,
-    userId: Number
+  username: String,
+  is_private: Boolean,
+  userId: {
+    type: Number,
+    unique: true,
+    index: 1,
+  },
+  isCommented: Boolean,
+  isResolvedFollower: Boolean,
+  isResolvedFollowing: Boolean,
 });
 
-const UserModel = mongoose.model('Users', userSchema);
+const UserModel = mongoose.model("Users", userSchema);
 
 module.exports = {
-    UserModel,
-    connectDB
-}
+  UserModel,
+  connectDB,
+};
