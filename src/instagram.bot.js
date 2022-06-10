@@ -4,7 +4,15 @@ const axios = require("axios").default;
 const utils = require("./utils");
 const { UserModel } = require("./mongoose");
 
-const { USER_NAME, PASSWORD, USER_ID } = process.env;
+const {
+  USER_NAME,
+  PASSWORD,
+  USER_ID,
+  ENABLE_COMMENTS,
+  ENABLE_GET_FOLLOWERS,
+  ENABLE_GET_FOLLOWINGS,
+  ENABLE_INITIALIZE,
+} = process.env;
 
 // axios.defaults.baseURL = "https://i.instagram.com/api/v1"
 class InstagramBot {
@@ -153,7 +161,7 @@ class InstagramBot {
     while (users.length < count) {
       const max_id = next_max_id ? `&max_id=${next_max_id}` : "";
       const res = await axios.get(
-        `https://i.instagram.com/api/v1/friendships/${USER_ID}/${type}/?count=100&search_surface=follow_list_page${max_id}`,
+        `https://i.instagram.com/api/v1/friendships/${USER_ID}/${type}/?count=500&search_surface=follow_list_page${max_id}`,
         {
           headers: {
             "x-ig-app-id": 936619743392459,
@@ -192,9 +200,18 @@ class InstagramBot {
       const postPage = await this.browser.newPage();
       await postPage.goto(`https://www.instagram.com/p/${code}/`);
       await postPage.waitFor(2000);
-      await postPage.type("._aao9 textarea", utils.randomComment(), {
-        delay: 400,
-      });
+      try {
+        await postPage.type("._aao9 textarea", utils.randomComment(), {
+          delay: 400,
+        });
+        await postPage.click("button[type=submit]", {
+          delay: 300,
+        });
+      } catch (e) {
+        console.error(e);
+      } finally {
+        await postPage.close();
+      }
     }
   };
 
@@ -218,11 +235,17 @@ class InstagramBot {
     await this.page.goto(`https://www.instagram.com/${user.username}/`);
     await this.page.waitFor(2000);
     if (!isFollowing) {
-      await this.page.click("._abn9._abng._abni._abnn", { delay: 300 });
-      await this.page.waitFor(1000);
+      await this.page
+        .waitForSelector("._abn9._abng._abni._abnn", { timeout: 2000 })
+        .then(async () => {
+          await this.page.click("._abn9._abng._abni._abnn", { delay: 300 });
+
+          await this.page.waitFor(1000);
+        })
+        .catch(console.error);
     }
 
-    if (!user.isCommented) {
+    if (!user.isCommented && ENABLE_COMMENTS != true) {
       await this.performComment(mediaShortCode);
       await UserModel.updateOne(
         {
@@ -232,7 +255,7 @@ class InstagramBot {
       );
     }
 
-    if (!user.isResolvedFollower) {
+    if (!user.isResolvedFollower && ENABLE_GET_FOLLOWERS == true) {
       await this.getUsers(followers, "followers");
       await UserModel.updateOne(
         {
@@ -242,7 +265,7 @@ class InstagramBot {
       );
     }
 
-    if (!user.isResolvedFollowing) {
+    if (!user.isResolvedFollowing && ENABLE_GET_FOLLOWINGS == true) {
       await this.getUsers(following, "following");
 
       await UserModel.updateOne(
@@ -258,10 +281,11 @@ class InstagramBot {
     try {
       await this.initialize();
       await this.login();
-      // const { followers, following } = await this.getMyProfile();
-      // await this.getUsers(followers, "followers");
-      // await this.getUsers(following, "following");
-
+      if (ENABLE_INITIALIZE == true) {
+        const { followers, following } = await this.getMyProfile();
+        await this.getUsers(followers, "followers");
+        await this.getUsers(following, "following");
+      }
       while (true) {
         await this.performBot();
       }

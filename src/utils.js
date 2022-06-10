@@ -15,7 +15,7 @@ function getRandomInt(min, max) {
 
 const randomComment = () => {
   const comment = COMMENTS.split(",");
-  const index = getRandomInt(0, comment.length);
+  const index = getRandomInt(0, comment.length-1);
 
   return comment[index];
 };

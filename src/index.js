@@ -28,8 +28,9 @@ connectDB().then(() => {
   app.use(bodyParser.urlencoded({ extended: true }))
   app.use(bodyParser.json())
   
+  instagramBot.buildBot();
+  
   app.get("/", async (req, res) => {
-    await instagramBot.buildBot();
     res.send("Hello World");
   });
   
